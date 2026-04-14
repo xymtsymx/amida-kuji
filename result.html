@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>あみだくじ — 結果発表</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #1a1209;
+  --paper: #fdf8f0;
+  --red: #c8392b;
+  --gold: #c9890a;
+  --light-gold: #fdf0cc;
+  --green: #2d6a4f;
+  --purple: #534AB7;
+  --border: rgba(26,18,9,0.15);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+.bg-pattern {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 15% 15%, rgba(201,137,10,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, rgba(200,57,43,0.07) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(83,74,183,0.04) 0%, transparent 60%);
+}
+.bg-dots {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background-image: radial-gradient(circle, rgba(26,18,9,0.05) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+.wrap {
+  position: relative; z-index: 1;
+  max-width: 560px; margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+/* ── INTRO SCREEN ── */
+#intro-screen {
+  min-height: 90vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+.intro-badge {
+  display: inline-block;
+  background: var(--red); color: white;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+  padding: 4px 14px; border-radius: 999px; margin-bottom: 1rem;
+  animation: fadeUp 0.6s 0.2s ease both;
+}
+.intro-title {
+  font-size: 40px; font-weight: 900; line-height: 1.15;
+  margin-bottom: 0.75rem;
+  animation: fadeUp 0.6s 0.4s ease both;
+}
+.intro-title span { color: var(--red); }
+.intro-sub {
+  font-size: 15px; color: rgba(26,18,9,0.55);
+  margin-bottom: 2.5rem;
+  animation: fadeUp 0.6s 0.6s ease both;
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.start-btn {
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 19px; font-weight: 900;
+  background: var(--red); color: white;
+  border: none; border-radius: 999px;
+  padding: 18px 48px; cursor: pointer;
+  letter-spacing: 0.08em;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 4px 24px rgba(200,57,43,0.3);
+  animation: fadeUp 0.6s 0.8s ease both, pulse 2s 2s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100% { transform: scale(1); } 50% { transform: scale(1.04); } }
+.start-btn:hover { background: #a82d20; transform: scale(1.04); animation: none; }
+.start-btn:active { transform: scale(0.97); }
+
+.participants-preview {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  justify-content: center; margin-top: 2rem;
+  animation: fadeUp 0.6s 1s ease both;
+}
+.preview-chip {
+  padding: 6px 14px; border-radius: 999px;
+  font-size: 13px; font-weight: 700;
+  background: white; border: 1px solid var(--border);
+  color: rgba(26,18,9,0.6);
+}
+
+/* ── AMIDA SCREEN ── */
+#amida-screen { display: none; }
+.amida-header { text-align: center; margin-bottom: 1.5rem; }
+.amida-header h2 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.amida-header p { font-size: 13px; color: rgba(26,18,9,0.5); }
+
+.amida-wrap {
+  background: white; border: 1px solid var(--border);
+  border-radius: 20px; padding: 1rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 20px rgba(26,18,9,0.06);
+}
+.amida-top-names {
+  display: flex; justify-content: space-around;
+  margin-bottom: 6px;
+}
+.top-name {
+  font-size: 10px; font-weight: 700; text-align: center;
+  width: 44px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  color: var(--ink);
+}
+canvas { width: 100%; display: block; border-radius: 10px; }
+.amida-bottom {
+  display: flex; justify-content: space-around; margin-top: 6px;
+}
+.bottom-mark {
+  width: 44px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 900;
+  transition: all 0.4s;
+}
+.bottom-mark.win { background: var(--light-gold); color: var(--gold); border: 1.5px solid var(--gold); }
+.bottom-mark.lose { background: rgba(26,18,9,0.05); color: rgba(26,18,9,0.25); border: 1px solid var(--border); }
+.bottom-mark.hidden { background: rgba(26,18,9,0.06); color: rgba(26,18,9,0.2); border: 1px dashed var(--border); }
+
+.reveal-btn {
+  width: 100%; padding: 18px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 19px; font-weight: 900;
+  background: var(--purple); color: white;
+  border: none; border-radius: 16px;
+  cursor: pointer; letter-spacing: 0.08em;
+  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 4px 24px rgba(83,74,183,0.3);
+  margin-bottom: 1.5rem;
+}
+.reveal-btn:hover { background: #3C3489; }
+.reveal-btn:active { transform: scale(0.97); }
+.reveal-btn:disabled { background: rgba(26,18,9,0.15); box-shadow: none; cursor: default; }
+
+/* ── RESULT SCREEN ── */
+#result-screen { display: none; }
+.result-hero { text-align: center; margin-bottom: 2rem; }
+.trophy { font-size: 52px; animation: dropIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+@keyframes dropIn { from { transform: translateY(-40px) scale(0.5); opacity: 0; } to { transform: none; opacity: 1; } }
+.result-hero h2 { font-size: 28px; font-weight: 900; margin-top: 0.5rem; }
+.result-hero p { font-size: 14px; color: rgba(26,18,9,0.5); margin-top: 4px; }
+
+.winners-section { margin-bottom: 1.5rem; }
+.section-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; letter-spacing: 0.1em;
+  color: rgba(26,18,9,0.45); margin-bottom: 10px;
+}
+.section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+.winner-card {
+  display: flex; align-items: center; gap: 14px;
+  background: white; border: 1px solid rgba(201,137,10,0.3);
+  border-radius: 16px; padding: 14px 16px; margin-bottom: 8px;
+  animation: slideInCard 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  box-shadow: 0 2px 12px rgba(201,137,10,0.1);
+}
+@keyframes slideInCard { from { opacity: 0; transform: translateX(-20px) scale(0.95); } to { opacity: 1; transform: none; } }
+.winner-rank {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--light-gold); color: var(--gold);
+  font-size: 13px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.winner-name { font-size: 19px; font-weight: 900; }
+.winner-icon { margin-left: auto; font-size: 20px; }
+
+.loser-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.loser-chip {
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 14px; font-weight: 700;
+  background: rgba(26,18,9,0.05);
+  color: rgba(26,18,9,0.4);
+  border: 1px solid var(--border);
+  animation: fadeIn 0.4s ease both;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+.replay-btn {
+  display: block; width: 100%; padding: 14px;
+  font-family: 'Zen Maru Gothic', sans-serif;
+  font-size: 15px; font-weight: 700;
+  background: white; color: var(--ink);
+  border: 1.5px solid var(--border); border-radius: 14px;
+  cursor: pointer; text-align: center;
+  margin-top: 1.5rem; transition: background 0.15s;
+  text-decoration: none;
+}
+.replay-btn:hover { background: var(--light-gold); }
+
+/* ── confetti ── */
+.confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+.cp { position: absolute; animation: cfFall linear both; }
+@keyframes cfFall { 0% { transform: translateY(-20px) rotate(0deg); opacity: 1; } 100% { transform: translateY(110vh) rotate(720deg); opacity: 0; } }
+
+/* ── overlay countdown ── */
+#countdown-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: var(--ink); align-items: center; justify-content: center;
+  flex-direction: column;
+}
+#countdown-overlay.show { display: flex; }
+.cd-num {
+  font-size: 120px; font-weight: 900; color: white;
+  animation: cdPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes cdPop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.cd-label { font-size: 16px; color: rgba(255,255,255,0.4); margin-top: 8px; }
+
+.error-msg {
+  text-align: center; padding: 3rem 1rem;
+  color: rgba(26,18,9,0.4); font-size: 15px;
+}
+</style>
+</head>
+<body>
+<div class="bg-pattern"></div>
+<div class="bg-dots"></div>
+<div class="confetti-container" id="confetti"></div>
+<div id="countdown-overlay">
+  <div class="cd-num" id="cd-num">3</div>
+  <div class="cd-label">結果発表まで...</div>
+</div>
+
+<div class="wrap" id="main-wrap">
+  <!-- INTRO -->
+  <div id="intro-screen">
+    <div class="intro-badge">🎁 プレゼント抽選</div>
+    <h1 class="intro-title">結果<span>発表</span></h1>
+    <p class="intro-sub">全員揃ったら、みんなで一緒に見よう！</p>
+    <button class="start-btn" onclick="startReveal()">あみだくじを引く！</button>
+    <div class="participants-preview" id="participants-preview"></div>
+  </div>
+
+  <!-- AMIDA -->
+  <div id="amida-screen">
+    <div class="amida-header">
+      <h2>あみだくじ</h2>
+      <p>線をたどって運命を決める...</p>
+    </div>
+    <div class="amida-wrap">
+      <div class="amida-top-names" id="amida-top"></div>
+      <canvas id="amida-canvas" height="320"></canvas>
+      <div class="amida-bottom" id="amida-bottom"></div>
+    </div>
+    <button class="reveal-btn" id="reveal-btn" onclick="doReveal()">結果を発表する！🎊</button>
+  </div>
+
+  <!-- RESULT -->
+  <div id="result-screen">
+    <div class="result-hero">
+      <div class="trophy">🏆</div>
+      <h2>当選者発表！</h2>
+      <p>おめでとうございます！</p>
+    </div>
+    <div class="winners-section">
+      <div class="section-title">当選 6名</div>
+      <div id="winners-cards"></div>
+    </div>
+    <div class="winners-section">
+      <div class="section-title">今回は残念でした</div>
+      <div class="loser-grid" id="losers-grid"></div>
+    </div>
+    <a class="replay-btn" href="entry.html">もう一度やる</a>
+  </div>
+</div>
+
+<script>
+const TOTAL = 9, WINNERS = 6;
+let names = [], amidaData = null;
+
+function loadData() {
+  const hash = location.hash.slice(1);
+  if (!hash) return false;
+  try {
+    names = JSON.parse(decodeURIComponent(atob(hash)));
+    return names.length === TOTAL;
+  } catch(e) { return false; }
+}
+
+function generateAmida() {
+  const cols = TOTAL, rows = 10, bridges = [];
+  const seed = names.join('').split('').reduce((a,c) => a + c.charCodeAt(0), 0);
+  let rng = seed;
+  function rand() { rng = (rng * 1664525 + 1013904223) & 0xffffffff; return Math.abs(rng) / 0x80000000; }
+  for (let r = 0; r < rows; r++) {
+    let c = 0;
+    while (c < cols - 1) {
+      if (rand() > 0.42) { bridges.push({row: r, col: c}); c += 2; } else { c++; }
+    }
+  }
+  const pool = Array.from({length: cols}, (_, i) => i < WINNERS);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return { cols, rows, bridges, outcomes: pool };
+}
+
+function traceAmida(startCol) {
+  const { rows, bridges } = amidaData;
+  let col = startCol;
+  for (let r = 0; r < rows; r++) {
+    const lb = bridges.find(b => b.row === r && b.col === col - 1);
+    const rb = bridges.find(b => b.row === r && b.col === col);
+    if (rb) col++;
+    else if (lb) col--;
+  }
+  return col;
+}
+
+function drawAmida(revealPaths) {
+  const canvas = document.getElementById('amida-canvas');
+  const dpr = window.devicePixelRatio || 1;
+  const displayW = canvas.offsetWidth || 520;
+  canvas.width = displayW * dpr;
+  canvas.height = 320 * dpr;
+  canvas.style.width = displayW + 'px';
+  canvas.style.height = '320px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  const W = displayW, H = 320;
+  const { cols, rows, bridges } = amidaData;
+  const padX = 28, padY = 16;
+  const stepX = (W - padX * 2) / (cols - 1);
+  const stepY = (H - padY * 2) / (rows + 1);
+  function gx(c) { return padX + c * stepX; }
+  function gy(r) { return padY + (r + 1) * stepY; }
+
+  ctx.clearRect(0, 0, W, H);
+
+  if (revealPaths) {
+    for (let startCol = 0; startCol < cols; startCol++) {
+      const endCol = traceAmida(startCol);
+      const isWin = amidaData.outcomes[endCol];
+      ctx.strokeStyle = isWin ? '#c9890a' : 'rgba(26,18,9,0.1)';
+      ctx.lineWidth = isWin ? 3.5 : 1.5;
+      let col = startCol;
+      ctx.beginPath();
+      ctx.moveTo(gx(col), gy(-1));
+      for (let r = 0; r < rows; r++) {
+        ctx.lineTo(gx(col), gy(r - 0.5));
+        const lb = bridges.find(b => b.row === r && b.col === col - 1);
+        const rb = bridges.find(b => b.row === r && b.col === col);
+        if (rb) { ctx.lineTo(gx(col + 1), gy(r - 0.5)); col++; }
+        else if (lb) { ctx.lineTo(gx(col - 1), gy(r - 0.5)); col--; }
+      }
+      ctx.lineTo(gx(col), gy(rows - 0.5));
+      ctx.stroke();
+    }
+  } else {
+    ctx.strokeStyle = 'rgba(26,18,9,0.15)';
+    ctx.lineWidth = 2;
+    for (let c = 0; c < cols; c++) {
+      ctx.beginPath(); ctx.moveTo(gx(c), gy(-1)); ctx.lineTo(gx(c), gy(rows - 0.5)); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(26,18,9,0.2)';
+    ctx.lineWidth = 2;
+    for (const b of bridges) {
+      ctx.beginPath(); ctx.moveTo(gx(b.col), gy(b.row - 0.5)); ctx.lineTo(gx(b.col + 1), gy(b.row - 0.5)); ctx.stroke();
+    }
+  }
+}
+
+function renderTopNames() {
+  const container = document.getElementById('amida-top');
+  container.innerHTML = '';
+  names.forEach(name => {
+    const d = document.createElement('div');
+    d.className = 'top-name';
+    d.textContent = name;
+    container.appendChild(d);
+  });
+}
+
+function renderBottomMarks(revealed) {
+  const container = document.getElementById('amida-bottom');
+  container.innerHTML = '';
+  for (let c = 0; c < TOTAL; c++) {
+    const d = document.createElement('div');
+    d.className = 'bottom-mark ' + (revealed ? (amidaData.outcomes[c] ? 'win' : 'lose') : 'hidden');
+    d.textContent = revealed ? (amidaData.outcomes[c] ? '当' : 'ー') : '？';
+    container.appendChild(d);
+  }
+}
+
+function startReveal() {
+  document.getElementById('intro-screen').style.display = 'none';
+  document.getElementById('amida-screen').style.display = 'block';
+  requestAnimationFrame(() => { drawAmida(false); renderBottomMarks(false); });
+}
+
+function doReveal() {
+  document.getElementById('reveal-btn').disabled = true;
+  const overlay = document.getElementById('countdown-overlay');
+  overlay.classList.add('show');
+  let count = 3;
+  const el = document.getElementById('cd-num');
+  el.textContent = count;
+  const tick = setInterval(() => {
+    count--;
+    if (count > 0) {
+      el.style.animation = 'none';
+      el.offsetHeight;
+      el.style.animation = '';
+      el.textContent = count;
+    } else {
+      clearInterval(tick);
+      overlay.classList.remove('show');
+      showResult();
+    }
+  }, 900);
+}
+
+function showResult() {
+  drawAmida(true);
+  renderBottomMarks(true);
+
+  setTimeout(() => {
+    document.getElementById('amida-screen').style.display = 'none';
+    document.getElementById('result-screen').style.display = 'block';
+
+    const winners = [], losers = [];
+    for (let c = 0; c < TOTAL; c++) {
+      const endCol = traceAmida(c);
+      (amidaData.outcomes[endCol] ? winners : losers).push(names[c]);
+    }
+
+    const wc = document.getElementById('winners-cards');
+    wc.innerHTML = '';
+    winners.forEach((name, i) => {
+      const card = document.createElement('div');
+      card.className = 'winner-card';
+      card.style.animationDelay = (i * 0.12) + 's';
+      card.innerHTML = `<div class="winner-rank">${i+1}</div><div class="winner-name">${name} さん</div><div class="winner-icon">🎁</div>`;
+      wc.appendChild(card);
+    });
+
+    const lg = document.getElementById('losers-grid');
+    lg.innerHTML = '';
+    losers.forEach((name, i) => {
+      const chip = document.createElement('div');
+      chip.className = 'loser-chip';
+      chip.style.animationDelay = (winners.length * 0.12 + i * 0.08) + 's';
+      chip.textContent = name + ' さん';
+      lg.appendChild(chip);
+    });
+
+    launchConfetti();
+  }, 600);
+}
+
+function launchConfetti() {
+  const container = document.getElementById('confetti');
+  container.innerHTML = '';
+  const colors = ['#c9890a','#c8392b','#534AB7','#2d6a4f','#D4537E','#378ADD'];
+  for (let i = 0; i < 120; i++) {
+    const p = document.createElement('div');
+    p.className = 'cp';
+    const size = 6 + Math.random() * 10;
+    p.style.cssText = `left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>0.5?'50%':'3px'};animation-duration:${1.8+Math.random()*2.5}s;animation-delay:${Math.random()*1}s;`;
+    container.appendChild(p);
+  }
+  setTimeout(() => container.innerHTML = '', 5000);
+}
+
+function init() {
+  if (!loadData()) {
+    document.getElementById('main-wrap').innerHTML = '<div class="error-msg">URLが正しくありません。<br>エントリーページから再度やり直してください。<br><br><a href="entry.html" style="color:var(--red);font-weight:700;">エントリーページへ</a></div>';
+    return;
+  }
+  amidaData = generateAmida();
+
+  const preview = document.getElementById('participants-preview');
+  names.forEach(name => {
+    const chip = document.createElement('div');
+    chip.className = 'preview-chip';
+    chip.textContent = name + ' さん';
+    preview.appendChild(chip);
+  });
+}
+
+init();
+</script>
+</body>
+</html>
