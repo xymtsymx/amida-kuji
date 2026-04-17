@@ -1,435 +1,1172 @@
 <!DOCTYPE html>
+
 <html lang="ja">
+
 <head>
+
 <meta charset="UTF-8">
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>あみだくじ — 結果発表！</title>
+
+<title>あみだくじ — 結果発表</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+
 <style>
+
   :root {
+
     --bg: #0f0e17;
+
     --surface: #1a1928;
+
     --surface2: #242336;
+
     --accent: #ff6b6b;
+
     --accent2: #ffd93d;
+
     --accent3: #6bcb77;
+
     --text: #fffffe;
+
     --text-muted: #a7a9be;
+
     --border: rgba(255,255,255,0.08);
+
     --purple: #7c5cbf;
+
     --purple-light: #a78bfa;
-    --win: #ffd93d;
-    --lose: #4a4868;
+
   }
+
   * { box-sizing: border-box; margin: 0; padding: 0; }
+
   body {
+
     background: var(--bg);
+
     color: var(--text);
+
     font-family: 'Noto Sans JP', sans-serif;
+
     min-height: 100vh;
+
     overflow-x: hidden;
+
   }
+
   .stars { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
-  .star { position: absolute; border-radius: 50%; background: white; animation: twinkle var(--d,3s) infinite ease-in-out; }
-  @keyframes twinkle { 0%,100%{opacity:0.1} 50%{opacity:0.7} }
+
+  .star {
+
+    position: absolute; border-radius: 50%;
+
+    background: white; animation: twinkle var(--d, 3s) infinite ease-in-out;
+
+  }
+
+  @keyframes twinkle {
+
+    0%,100% { opacity: 0.1; transform: scale(1); }
+
+    50% { opacity: 0.8; transform: scale(1.4); }
+
+  }
 
   .container {
+
     position: relative; z-index: 1;
-    max-width: 640px; margin: 0 auto;
-    padding: 2rem 1.25rem 5rem;
+
+    max-width: 560px; margin: 0 auto;
+
+    padding: 2rem 1.25rem 4rem;
+
   }
 
-  /* === WAITING SCREEN === */
-  #waiting-screen { text-align: center; padding: 4rem 1rem; }
-  #waiting-screen .big { font-size: 64px; display: block; margin-bottom: 1.5rem; animation: float 3s ease-in-out infinite; }
-  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
-  #waiting-screen h2 { font-family: 'Zen Maru Gothic', sans-serif; font-size: 22px; margin-bottom: 0.75rem; }
-  #waiting-screen p { color: var(--text-muted); font-size: 14px; line-height: 1.8; }
-  .progress-bar-wrap { margin: 1.5rem auto; max-width: 300px; }
-  .progress-bar-track { background: var(--surface2); border-radius: 999px; height: 10px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--purple), var(--accent2)); transition: width 0.5s ease; }
-  .progress-label { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+  .header {
 
-  /* === REVEAL SCREEN === */
-  #reveal-screen { display: none; }
-  .reveal-header { text-align: center; margin-bottom: 2.5rem; }
-  .reveal-header .crown { font-size: 56px; display: block; animation: bounce 2s infinite; }
-  @keyframes bounce { 0%,100%{transform:translateY(0) rotate(-5deg)} 50%{transform:translateY(-10px) rotate(5deg)} }
-  .reveal-header h1 {
+    text-align: center; margin-bottom: 2rem;
+
+    animation: fadeDown 0.7s ease both;
+
+  }
+
+  .gift-icon {
+
+    font-size: 52px; display: block; margin-bottom: 0.5rem;
+
+    animation: bounce 2s infinite ease-in-out;
+
+  }
+
+  @keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+  .header h1 {
+
     font-family: 'Zen Maru Gothic', sans-serif;
-    font-size: 32px; font-weight: 700;
-    background: linear-gradient(135deg, var(--accent2), var(--accent));
+
+    font-size: 28px; font-weight: 700;
+
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 100%);
+
     -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+
     background-clip: text;
+
     margin-bottom: 0.5rem;
-  }
-  .reveal-header p { color: var(--text-muted); font-size: 14px; }
 
-  /* Amida canvas */
-  #amida-wrap {
+  }
+
+  .header p { color: var(--text-muted); font-size: 14px; line-height: 1.7; }
+
+  @keyframes fadeDown { from{opacity:0;transform:translateY(-20px)} to{opacity:1;transform:translateY(0)} }
+
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+
+  @keyframes popIn { from{transform:scale(0.4);opacity:0} to{transform:scale(1);opacity:1} }
+
+  @keyframes fall {
+
+    0%{transform:translateY(0) rotate(0);opacity:1}
+
+    100%{transform:translateY(110vh) rotate(720deg);opacity:0}
+
+  }
+
+
+
+
+  .card {
+
     background: var(--surface);
+
     border: 1px solid var(--border);
+
     border-radius: 20px;
-    padding: 1.25rem;
-    margin-bottom: 1.5rem;
-  }
-  #amida-canvas { width: 100%; display: block; border-radius: 12px; }
 
-  /* Results */
-  .results-section { margin-bottom: 1.5rem; }
-  .section-title {
-    display: flex; align-items: center; gap: 8px;
-    font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase;
-    color: var(--text-muted); font-weight: 700; margin-bottom: 1rem;
-  }
-  .section-title::before, .section-title::after {
-    content: ''; flex: 1; height: 1px; background: var(--border);
-  }
+    padding: 1.75rem;
 
-  .winners-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
     margin-bottom: 1.25rem;
-  }
-  .winner-card {
-    background: linear-gradient(135deg, rgba(255,217,61,0.15), rgba(255,107,107,0.1));
-    border: 1.5px solid rgba(255,217,61,0.4);
-    border-radius: 16px;
-    padding: 1rem;
-    text-align: center;
-    opacity: 0;
-    transform: scale(0.8) translateY(20px);
-    transition: all 0.5s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .winner-card.show { opacity: 1; transform: scale(1) translateY(0); }
-  .winner-card .medal { font-size: 28px; display: block; margin-bottom: 6px; }
-  .winner-card .wname { font-size: 17px; font-weight: 700; color: var(--accent2); font-family: 'Zen Maru Gothic', sans-serif; }
-  .winner-card .wslot { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
 
-  .losers-grid {
-    display: flex; flex-wrap: wrap; gap: 8px;
-  }
-  .loser-chip {
-    padding: 8px 16px;
-    border-radius: 999px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    font-size: 13px; color: var(--text-muted);
-    opacity: 0;
-    transform: scale(0.9);
-    transition: all 0.3s ease;
-  }
-  .loser-chip.show { opacity: 1; transform: scale(1); }
+    animation: fadeUp 0.6s ease both;
 
-  .start-reveal-btn {
+  }
+
+  .card-label {
+
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+
+    color: var(--purple-light); font-weight: 700; margin-bottom: 0.75rem;
+
+  }
+
+  .card-label.green { color: var(--accent3); }
+
+
+
+
+  .submit-btn {
+
     width: 100%;
-    padding: 18px;
+
+    padding: 16px;
+
     border-radius: 14px;
+
     border: none;
-    background: linear-gradient(135deg, var(--purple), var(--accent));
-    color: white;
-    font-size: 18px;
+
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+
+    color: #1a0a00;
+
+    font-size: 17px;
+
     font-weight: 700;
+
     font-family: 'Zen Maru Gothic', sans-serif;
+
     cursor: pointer;
+
     transition: all 0.2s;
-    margin-top: 0.5rem;
-    display: none;
-  }
-  .start-reveal-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(124,92,191,0.4); }
-  .start-reveal-btn.show { display: block; }
 
-  /* Confetti */
-  .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 200; overflow: hidden; }
-  .cp { position: absolute; animation: fall linear both; }
-  @keyframes fall { 0%{transform:translateY(-20px) rotate(0) scale(1);opacity:1} 100%{transform:translateY(110vh) rotate(720deg) scale(0.5);opacity:0} }
-
-  .amida-top-names {
-    display: flex; justify-content: space-around;
-    padding: 0 0 8px;
-    font-size: 10px; color: var(--text-muted);
-    overflow: hidden;
-  }
-  .amida-top-name { width: 11%; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-
-  .not-ready {
-    text-align: center; color: var(--text-muted);
-    font-size: 14px; padding: 1rem;
-    background: var(--surface); border-radius: 12px;
-    border: 1px solid var(--border);
   }
 
-  .loading-overlay { display:none;position:fixed;inset:0;background:rgba(15,14,23,0.85);z-index:100;align-items:center;justify-content:center;flex-direction:column;gap:1rem; }
-  .loading-overlay.show { display:flex; }
-  .spinner { width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent2);border-radius:50%;animation:spin 0.8s linear infinite; }
-  @keyframes spin { to{transform:rotate(360deg)} }
+  .submit-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(255,107,107,0.35); }
+
+  .submit-btn:active:not(:disabled) { transform: scale(0.98); }
+
+  .submit-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+
+
+
+
+  .entry-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+  .entry-chip {
+
+    padding: 4px 10px;
+
+    border-radius: 999px;
+
+    background: rgba(124,92,191,0.25);
+
+    border: 1px solid rgba(167,139,250,0.3);
+
+    font-size: 12px; color: var(--purple-light);
+
+    display: flex; align-items: center; gap: 5px;
+
+  }
+
+  .entry-chip .num {
+
+    background: var(--purple); color: white;
+
+    width: 16px; height: 16px; border-radius: 50%;
+
+    display: inline-flex; align-items: center; justify-content: center;
+
+    font-size: 10px; font-weight: 700;
+
+  }
+
+
+
+
+  .amida-canvas { width: 100%; border-radius: 8px; background: #0a0a12; display: block; }
+
+
+
+
+  .progress-wrap {
+
+    margin-top: 12px;
+
+    background: rgba(255,255,255,0.06);
+
+    border-radius: 999px; height: 4px; overflow: hidden;
+
+  }
+
+  .progress-bar {
+
+    height: 100%; width: 0%;
+
+    background: var(--accent2);
+
+    transition: width 0.1s linear;
+
+    border-radius: 999px;
+
+  }
+
+  .suspense-msg {
+
+    text-align: center; font-size: 13px; color: var(--text-muted);
+
+    margin-top: 10px; min-height: 20px; transition: opacity 0.3s;
+
+  }
+
+
+
+
+  .result-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .winner-chip {
+
+    padding: 8px 14px; border-radius: 999px;
+
+    background: rgba(107,203,119,0.2);
+
+    border: 1px solid rgba(107,203,119,0.4);
+
+    font-size: 14px; color: var(--accent3); font-weight: 500;
+
+    animation: popIn 0.4s ease both;
+
+  }
+
+  .loser-chip {
+
+    padding: 8px 14px; border-radius: 999px;
+
+    background: rgba(255,255,255,0.05);
+
+    border: 1px solid rgba(255,255,255,0.1);
+
+    font-size: 13px; color: var(--text-muted);
+
+    animation: popIn 0.4s ease both;
+
+  }
+
+
+
+
+  .loading-overlay {
+
+    display: none; position: fixed; inset: 0;
+
+    background: rgba(15,14,23,0.85); z-index: 100;
+
+    align-items: center; justify-content: center;
+
+    flex-direction: column; gap: 1rem;
+
+  }
+
+  .loading-overlay.show { display: flex; }
+
+  .spinner {
+
+    width: 40px; height: 40px;
+
+    border: 3px solid var(--border);
+
+    border-top-color: var(--accent2);
+
+    border-radius: 50%;
+
+    animation: spin 0.8s linear infinite;
+
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text { color: var(--text-muted); font-size: 14px; }
+
+
+
+
+  .confetti-container { position: fixed; inset: 0; pointer-events: none; z-index: 999; overflow: hidden; }
+
 </style>
+
 </head>
+
 <body>
+
+
+
+
 <div class="stars" id="stars"></div>
+
 <div class="confetti-container" id="confetti"></div>
+
 <div class="loading-overlay" id="loading">
+
   <div class="spinner"></div>
-  <p style="color:var(--text-muted);font-size:14px;">読み込み中...</p>
+
+  <div class="loading-text">読み込み中...</div>
+
 </div>
+
+
+
 
 <div class="container">
-  <div id="waiting-screen">
-    <span class="big">⏳</span>
-    <h2>エントリー待ち中...</h2>
-    <p>全員がエントリーしたら<br>結果発表ボタンが現れます！</p>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+
+  <div class="header">
+
+    <span class="gift-icon">🎁</span>
+
+    <h1>結果発表</h1>
+
+    <p>あみだくじで当選者を決定します</p>
+
+  </div>
+
+
+
+
+  <div id="phase-waiting">
+
+    <div class="card">
+
+      <div class="card-label">エントリー一覧</div>
+
+      <div class="entry-chips" id="entry-chips"></div>
+
+      <div id="not-ready-msg" style="color:var(--text-muted);font-size:13px;margin-top:0.75rem;display:none;">
+
+        まだエントリーが揃っていません (<span id="entry-count-msg">0</span>/9人)
+
       </div>
-      <div class="progress-label"><span id="entry-count">0</span> / 9 人がエントリー済み</div>
+
     </div>
+
+    <button class="submit-btn" id="start-btn" disabled onclick="startReveal()">
+
+      結果を発表する 🎯
+
+    </button>
+
   </div>
 
-  <button class="start-reveal-btn" id="reveal-btn">🎉 結果を発表する！</button>
 
-  <div id="reveal-screen">
-    <div class="reveal-header">
-      <span class="crown">🏆</span>
-      <h1>結果発表！</h1>
-      <p>プレゼントをゲットした6人はこちら！</p>
+
+
+  <div id="phase-reveal" style="display:none;">
+
+    <div class="card">
+
+      <div class="card-label" id="reveal-label">あみだくじ — 経路をたどっています...</div>
+
+      <canvas class="amida-canvas" id="amida-canvas" height="280"></canvas>
+
+      <div class="progress-wrap"><div class="progress-bar" id="progress-bar"></div></div>
+
+      <div class="suspense-msg" id="suspense-msg">運命の線をたどっています...</div>
+
     </div>
 
-    <div id="amida-wrap">
-      <div class="amida-top-names" id="amida-top-names"></div>
-      <canvas id="amida-canvas" height="300"></canvas>
+
+
+
+    <div id="result-section" style="display:none;animation:fadeUp 0.6s ease both;">
+
+      <div class="card">
+
+        <div class="card-label green">当選者 — 6名 🎉</div>
+
+        <div class="result-chips" id="winners-wrap"></div>
+
+      </div>
+
+      <div class="card">
+
+        <div class="card-label">今回は残念でした — 3名</div>
+
+        <div class="result-chips" id="losers-wrap"></div>
+
+      </div>
+
     </div>
 
-    <div class="results-section">
-      <div class="section-title">🎁 当選おめでとう！</div>
-      <div class="winners-grid" id="winners-grid"></div>
-      <div class="section-title">またの機会に</div>
-      <div class="losers-grid" id="losers-grid"></div>
-    </div>
   </div>
+
 </div>
 
+
+
+
 <script type="module">
+
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getDatabase, ref, onValue, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+
+
+
 
 // ========== Firebase設定 (index.htmlと同じものを入れてください) ==========
-const firebaseConfig = {
-  apiKey: "AIzaSyAMPfNdKuNlAgbxx84MOgF_yciqNVvwVjo",
-  authDomain: "amida-kuji.firebaseapp.com",
-  databaseURL: "https://amida-kuji-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "amida-kuji",
-  storageBucket: "amida-kuji.firebasestorage.app",
-  messagingSenderId: "446747601744",
-  appId: "1:446747601744:web:c0e74da8080bf567a8da55"
-};
-// =========================================================================
 
-const TOTAL = 9, WINNERS = 6;
+const firebaseConfig = {
+
+  apiKey: "YOUR_API_KEY",
+
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+
+  databaseURL: "https://YOUR_PROJECT-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+  projectId: "YOUR_PROJECT",
+
+  storageBucket: "YOUR_PROJECT.appspot.com",
+
+  messagingSenderId: "YOUR_SENDER_ID",
+
+  appId: "YOUR_APP_ID"
+
+};
+
+// ===========================================================
+
+
+
+
+const TOTAL = 9;
+
+const WINNERS_COUNT = 6;
+
 const app = initializeApp(firebaseConfig);
+
 const db = getDatabase(app);
+
 const entriesRef = ref(db, 'entries');
-const amidaRef = ref(db, 'amida');
+
+
+
+
+const loading = document.getElementById('loading');
+
+const startBtn = document.getElementById('start-btn');
+
+const entryChipsEl = document.getElementById('entry-chips');
+
+const notReadyMsg = document.getElementById('not-ready-msg');
+
+const entryCountMsg = document.getElementById('entry-count-msg');
+
+
+
 
 let entries = {};
+
 let amidaData = null;
 
-document.getElementById('loading').classList.add('show');
+let animFrame = null;
 
-function generateAmida(seed) {
-  const rng = (() => { let s = seed; return () => { s = (s * 1664525 + 1013904223) & 0xFFFFFFFF; return (s >>> 0) / 0xFFFFFFFF; }; })();
-  const cols = TOTAL, rows = 8, bridges = [];
-  for (let r = 0; r < rows; r++) {
-    let c = 0;
-    while (c < cols - 1) {
-      if (rng() > 0.45) { bridges.push({row: r, col: c}); c += 2; } else c++;
-    }
-  }
-  const pool = Array.from({length: cols}, (_, i) => i < WINNERS);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
-  return { cols, rows, bridges, outcomes: pool };
-}
 
-function traceAmida(startCol) {
-  const { rows, bridges } = amidaData;
-  let col = startCol;
-  for (let r = 0; r < rows; r++) {
-    const lb = bridges.find(b => b.row === r && b.col === col - 1);
-    const rb = bridges.find(b => b.row === r && b.col === col);
-    if (rb) col++;
-    else if (lb) col--;
-  }
-  return col;
-}
 
-function drawAmida(canvas, highlightResults) {
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.offsetWidth || 580;
-  canvas.width = W * dpr; canvas.height = 300 * dpr;
-  canvas.style.width = W + 'px'; canvas.style.height = '300px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-  const { cols, rows, bridges } = amidaData;
-  const padX = 24, padY = 16, stepX = (W - padX*2)/(cols-1), stepY = (300-padY*2)/(rows+1);
-  const gx = c => padX + c * stepX;
-  const gy = r => padY + (r+1) * stepY;
 
-  // vertical lines
-  for (let c = 0; c < cols; c++) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
-    ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(gx(c), gy(-1)); ctx.lineTo(gx(c), gy(rows-0.5)); ctx.stroke();
-  }
-  // bridges
-  for (const b of bridges) {
-    ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-    ctx.lineWidth = 2.5;
-    ctx.beginPath(); ctx.moveTo(gx(b.col), gy(b.row-0.5)); ctx.lineTo(gx(b.col+1), gy(b.row-0.5)); ctx.stroke();
-  }
-  // outcome dots
-  for (let c = 0; c < cols; c++) {
-    const win = amidaData.outcomes[c];
-    ctx.fillStyle = win ? 'rgba(255,217,61,0.3)' : 'rgba(74,72,104,0.5)';
-    ctx.beginPath(); ctx.arc(gx(c), gy(rows-0.5)+14, 9, 0, Math.PI*2); ctx.fill();
-    if (win) {
-      ctx.fillStyle = '#ffd93d';
-      ctx.font = `bold 9px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('当', gx(c), gy(rows-0.5)+14);
-    }
-  }
-  if (!highlightResults) return;
+function showLoading() { loading.classList.add('show'); }
 
-  // draw traced paths
-  Object.entries(entries).forEach(([slotStr, data]) => {
-    const startCol = parseInt(slotStr);
-    const endCol = traceAmida(startCol);
-    const win = amidaData.outcomes[endCol];
-    ctx.strokeStyle = win ? '#ffd93d' : 'rgba(167,139,250,0.4)';
-    ctx.lineWidth = win ? 3 : 2;
-    let col = startCol;
-    ctx.beginPath(); ctx.moveTo(gx(col), gy(-1));
-    for (let r = 0; r < rows; r++) {
-      ctx.lineTo(gx(col), gy(r-0.5));
-      const lb = bridges.find(b=>b.row===r && b.col===col-1);
-      const rb = bridges.find(b=>b.row===r && b.col===col);
-      if (rb) { ctx.lineTo(gx(col+1), gy(r-0.5)); col++; }
-      else if (lb) { ctx.lineTo(gx(col-1), gy(r-0.5)); col--; }
-    }
-    ctx.lineTo(gx(col), gy(rows-0.5)); ctx.stroke();
-  });
-}
+function hideLoading() { loading.classList.remove('show'); }
 
-function renderTopNames() {
-  const wrap = document.getElementById('amida-top-names');
-  wrap.innerHTML = '';
-  for (let i = 0; i < TOTAL; i++) {
-    const d = document.createElement('div');
-    d.className = 'amida-top-name';
-    d.textContent = entries[i] ? entries[i].name : '';
-    wrap.appendChild(d);
-  }
-}
 
-async function revealResults() {
-  document.getElementById('reveal-btn').style.display = 'none';
-  document.getElementById('waiting-screen').style.display = 'none';
-  const rs = document.getElementById('reveal-screen');
-  rs.style.display = 'block';
 
-  renderTopNames();
-  const canvas = document.getElementById('amida-canvas');
-  drawAmida(canvas, false);
 
-  await delay(600);
-  drawAmida(canvas, true);
-  await delay(400);
-
-  const winners = [], losers = [];
-  Object.entries(entries).forEach(([slot, data]) => {
-    const end = traceAmida(parseInt(slot));
-    if (amidaData.outcomes[end]) winners.push({name: data.name, slot: parseInt(slot)+1});
-    else losers.push({name: data.name, slot: parseInt(slot)+1});
-  });
-
-  await delay(200);
-  launchConfetti();
-
-  const wg = document.getElementById('winners-grid');
-  wg.innerHTML = '';
-  const medals = ['🥇','🥈','🥉','🎖️','🎖️','🎖️'];
-  for (let i = 0; i < winners.length; i++) {
-    const card = document.createElement('div');
-    card.className = 'winner-card';
-    card.innerHTML = `<span class="medal">${medals[i]||'🎁'}</span><div class="wname">${winners[i].name}</div><div class="wslot">${winners[i].slot}番</div>`;
-    wg.appendChild(card);
-    await delay(150);
-    card.classList.add('show');
-  }
-
-  await delay(400);
-  const lg = document.getElementById('losers-grid');
-  lg.innerHTML = '';
-  for (let i = 0; i < losers.length; i++) {
-    const chip = document.createElement('div');
-    chip.className = 'loser-chip';
-    chip.textContent = losers[i].name + ' さん';
-    lg.appendChild(chip);
-    await delay(100);
-    chip.classList.add('show');
-  }
-}
-
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function launchConfetti() {
-  const c = document.getElementById('confetti');
-  c.innerHTML = '';
-  const colors = ['#ffd93d','#ff6b6b','#6bcb77','#a78bfa','#ff9f43','#54a0ff'];
-  for (let i = 0; i < 120; i++) {
-    const p = document.createElement('div');
-    p.className = 'cp';
-    const size = 6 + Math.random() * 10;
-    p.style.cssText = `width:${size}px;height:${size}px;border-radius:${Math.random()>.5?'50%':'2px'};background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-10px;animation-duration:${1.5+Math.random()*2.5}s;animation-delay:${Math.random()*1}s`;
-    c.appendChild(p);
-  }
-  setTimeout(() => c.innerHTML = '', 5000);
-}
-
-function createStars() {
-  const c = document.getElementById('stars');
-  for (let i = 0; i < 60; i++) {
-    const s = document.createElement('div');
-    const sz = Math.random() * 2.5 + 1;
-    s.className = 'star';
-    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
-    c.appendChild(s);
-  }
-}
-createStars();
-
-// Listen
 onValue(entriesRef, (snap) => {
-  entries = snap.val() || {};
-  const count = Object.keys(entries).length;
-  document.getElementById('entry-count').textContent = count;
-  document.getElementById('progress-fill').style.width = (count/TOTAL*100) + '%';
 
-  // Generate amida from seed based on entries if all filled
+  entries = snap.val() || {};
+
+  renderEntryChips();
+
+  const count = Object.keys(entries).length;
+
+  entryCountMsg.textContent = count;
+
   if (count >= TOTAL) {
-    // Use a deterministic seed from entry data
-    const seed = Object.entries(entries).reduce((acc, [k,v]) => acc + parseInt(k) * 31 + v.name.charCodeAt(0), 12345);
-    amidaData = generateAmida(seed);
-    document.getElementById('waiting-screen').style.display = 'none';
-    document.getElementById('reveal-btn').classList.add('show');
+
+    startBtn.disabled = false;
+
+    notReadyMsg.style.display = 'none';
+
+  } else {
+
+    startBtn.disabled = true;
+
+    notReadyMsg.style.display = count > 0 ? 'block' : 'none';
+
   }
-  document.getElementById('loading').classList.remove('show');
+
 });
 
-document.getElementById('reveal-btn').onclick = revealResults;
+
+
+
+function renderEntryChips() {
+
+  entryChipsEl.innerHTML = '';
+
+  if (Object.keys(entries).length === 0) {
+
+    entryChipsEl.innerHTML = '<span style="color:var(--text-muted);font-size:13px;">まだエントリーがありません</span>';
+
+    return;
+
+  }
+
+  Object.entries(entries).sort((a,b) => a[0]-b[0]).forEach(([slot, data]) => {
+
+    const chip = document.createElement('div');
+
+    chip.className = 'entry-chip';
+
+    chip.innerHTML = `<span class="num">${parseInt(slot)+1}</span>${data.name}`;
+
+    entryChipsEl.appendChild(chip);
+
+  });
+
+}
+
+
+
+
+function generateAmida(namesBySlot) {
+
+  const cols = TOTAL, rows = 10, bridges = [];
+
+  for (let r = 0; r < rows; r++) {
+
+    let c = 0;
+
+    while (c < cols - 1) {
+
+      if (Math.random() > 0.4) { bridges.push({row:r,col:c}); c+=2; } else c++;
+
+    }
+
+  }
+
+  for (let gap = 0; gap < cols - 1; gap++) {
+
+    const inGap = bridges.filter(b => b.col === gap);
+
+    while (inGap.length < 2) {
+
+      const availRows = [];
+
+      for (let r = 0; r < rows; r++) {
+
+        const conflict = bridges.some(b => b.row===r && (b.col===gap || b.col===gap-1 || b.col===gap+1));
+
+        if (!conflict) availRows.push(r);
+
+      }
+
+      if (availRows.length === 0) break;
+
+      const r = availRows[Math.floor(Math.random() * availRows.length)];
+
+      bridges.push({row:r, col:gap});
+
+      inGap.push({row:r, col:gap});
+
+    }
+
+  }
+
+  const pool = Array.from({length: cols}, (_,i) => i < WINNERS_COUNT);
+
+  for (let i = pool.length-1; i > 0; i--) {
+
+    const j = Math.floor(Math.random() * (i+1));
+
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+
+  }
+
+  return {cols, rows, bridges, outcomes: pool, names: namesBySlot};
+
+}
+
+
+
+
+function traceAmida(startCol) {
+
+  const {rows, bridges} = amidaData;
+
+  let col = startCol;
+
+  for (let r = 0; r < rows; r++) {
+
+    const lb = bridges.find(b => b.row===r && b.col===col-1);
+
+    const rb = bridges.find(b => b.row===r && b.col===col);
+
+    if (rb) col++; else if (lb) col--;
+
+  }
+
+  return col;
+
+}
+
+
+
+
+function getCoords(W, H, col, row) {
+
+  const {cols, rows} = amidaData;
+
+  const padX = 22, padY = 28;
+
+  const stepX = (W - padX*2) / (cols-1);
+
+  const stepY = (H - padY*2) / (rows+1);
+
+  return {x: padX + col*stepX, y: padY + (row+1)*stepY};
+
+}
+
+
+
+
+function easeInOut(t) { return t < 0.5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
+
+
+
+
+function buildPathPoints(startCol, W, H, progress) {
+
+  const {rows, bridges} = amidaData;
+
+  const top = getCoords(W, H, startCol, -1);
+
+  let col = startCol;
+
+  const segments = [];
+
+  for (let r = 0; r < rows; r++) {
+
+    const lb = bridges.find(b => b.row===r && b.col===col-1);
+
+    const rb = bridges.find(b => b.row===r && b.col===col);
+
+    const pMid = getCoords(W, H, col, r-0.5);
+
+    if (rb) { segments.push([pMid, getCoords(W,H,col+1,r-0.5)]); col++; }
+
+    else if (lb) { segments.push([pMid, getCoords(W,H,col-1,r-0.5)]); col--; }
+
+    else { segments.push([pMid, getCoords(W,H,col,r-0.5)]); }
+
+  }
+
+  segments.push([getCoords(W,H,col,rows-1), getCoords(W,H,col,rows-0.5)]);
+
+
+
+
+  const total = segments.length;
+
+  const filled = Math.floor(progress * total);
+
+  const frac = (progress * total) - filled;
+
+  const result = [top];
+
+  for (let i = 0; i < filled; i++) { result.push(segments[i][0], segments[i][1]); }
+
+  if (filled < total) {
+
+    const s = segments[filled];
+
+    result.push(s[0]);
+
+    result.push({x: s[0].x+(s[1].x-s[0].x)*frac, y: s[0].y+(s[1].y-s[0].y)*frac});
+
+  }
+
+  return {points: result, endCol: col};
+
+}
+
+
+
+
+function drawFrame(ctx, W, H, activePaths) {
+
+  const {cols, rows, bridges, names} = amidaData;
+
+  ctx.clearRect(0, 0, W, H);
+
+
+
+
+  for (let c = 0; c < cols; c++) {
+
+    const top = getCoords(W,H,c,-1), bot = getCoords(W,H,c,rows-0.5);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 1.5;
+
+    ctx.beginPath(); ctx.moveTo(top.x,top.y); ctx.lineTo(bot.x,bot.y); ctx.stroke();
+
+  }
+
+  for (const b of bridges) {
+
+    const p1 = getCoords(W,H,b.col,b.row-0.5), p2 = getCoords(W,H,b.col+1,b.row-0.5);
+
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1.8;
+
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+
+  }
+
+
+
+
+  ctx.textAlign = 'center';
+
+  for (let c = 0; c < cols; c++) {
+
+    const p = getCoords(W,H,c,-1);
+
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+
+    ctx.font = 'bold 11px sans-serif';
+
+    ctx.fillText(String(c+1), p.x, p.y-16);
+
+    const name = names[c] || '';
+
+    if (name) {
+
+      ctx.fillStyle = 'rgba(167,139,250,0.75)';
+
+      ctx.font = '9px sans-serif';
+
+      ctx.fillText(name.length > 3 ? name.slice(0,3) : name, p.x, p.y-4);
+
+    }
+
+  }
+
+
+
+
+  const pathColors = ['#ffd93d','#ff6b6b','#6bcb77','#a78bfa','#4dd0e1','#ff9f43','#fd79a8','#00cec9','#e17055'];
+
+  for (const ap of activePaths) {
+
+    if (ap.points.length < 2) continue;
+
+    ctx.strokeStyle = ap.color; ctx.lineWidth = ap.width || 3;
+
+    ctx.shadowColor = ap.color; ctx.shadowBlur = ap.glow || 0;
+
+    ctx.beginPath(); ctx.moveTo(ap.points[0].x, ap.points[0].y);
+
+    for (let i = 1; i < ap.points.length; i++) ctx.lineTo(ap.points[i].x, ap.points[i].y);
+
+    ctx.stroke(); ctx.shadowBlur = 0;
+
+    const last = ap.points[ap.points.length-1];
+
+    ctx.fillStyle = ap.color;
+
+    ctx.beginPath(); ctx.arc(last.x, last.y, 4, 0, Math.PI*2); ctx.fill();
+
+  }
+
+}
+
+
+
+
+window.startReveal = function() {
+
+  document.getElementById('phase-waiting').style.display = 'none';
+
+  document.getElementById('phase-reveal').style.display = 'block';
+
+
+
+
+  const namesBySlot = Array.from({length: TOTAL}, (_,i) => {
+
+    return entries[i] ? entries[i].name : `${i+1}番`;
+
+  });
+
+  amidaData = generateAmida(namesBySlot);
+
+
+
+
+  const canvas = document.getElementById('amida-canvas');
+
+  const dpr = window.devicePixelRatio || 1;
+
+  const W = canvas.offsetWidth || 500;
+
+  const H = 300;
+
+  canvas.width = W * dpr; canvas.height = H * dpr;
+
+  canvas.style.height = H + 'px';
+
+  const ctx = canvas.getContext('2d');
+
+  ctx.scale(dpr, dpr);
+
+
+
+
+  const TOTAL_DURATION = 6500;
+
+  const staggerDelay = 220;
+
+  const pathDuration = TOTAL_DURATION - (TOTAL-1) * staggerDelay;
+
+  const startTime = performance.now();
+
+
+
+
+  const suspenseMessages = ['さあ、誰が当たるのか…','運命の分かれ道…','ドキドキ…','あと少し…','いよいよ結果が…','果たして…','運命は…'];
+
+  let msgIdx = 0;
+
+  const suspenseEl = document.getElementById('suspense-msg');
+
+  const msgInterval = setInterval(() => {
+
+    suspenseEl.style.opacity = '0';
+
+    setTimeout(() => {
+
+      suspenseEl.textContent = suspenseMessages[msgIdx % suspenseMessages.length];
+
+      suspenseEl.style.opacity = '1';
+
+      msgIdx++;
+
+    }, 200);
+
+  }, 900);
+
+
+
+
+  function animate(now) {
+
+    const elapsed = now - startTime;
+
+    const activePaths = [];
+
+    let allDone = true;
+
+
+
+
+    for (let c = 0; c < TOTAL; c++) {
+
+      const delay = c * staggerDelay;
+
+      const t = Math.max(0, elapsed - delay);
+
+      const rawProgress = Math.min(1, t / pathDuration);
+
+      const progress = easeInOut(rawProgress);
+
+      if (rawProgress < 1) allDone = false;
+
+
+
+
+      const {points} = buildPathPoints(c, W, H, progress);
+
+      const isDone = rawProgress >= 1;
+
+      const endCol = isDone ? traceAmida(c) : null;
+
+      const isWin = isDone && amidaData.outcomes[endCol];
+
+
+
+
+      activePaths.push({
+
+        points,
+
+        color: isDone ? (isWin ? '#ffd93d' : 'rgba(255,255,255,0.15)') : ['#ffd93d','#ff6b6b','#6bcb77','#a78bfa','#4dd0e1','#ff9f43','#fd79a8','#00cec9','#e17055'][c],
+
+        width: isDone ? (isWin ? 3 : 1.5) : 2.5,
+
+        glow: isDone ? (isWin ? 8 : 0) : (progress > 0 ? 5 : 0)
+
+      });
+
+    }
+
+
+
+
+    document.getElementById('progress-bar').style.width = Math.min(100, (elapsed / TOTAL_DURATION) * 100) + '%';
+
+    drawFrame(ctx, W, H, activePaths);
+
+
+
+
+    for (let c = 0; c < TOTAL; c++) {
+
+      const endCol = traceAmida(c);
+
+      const done = elapsed - c * staggerDelay >= pathDuration;
+
+      if (done) {
+
+        const isWin = amidaData.outcomes[endCol];
+
+        const p = getCoords(W, H, endCol, amidaData.rows - 0.5);
+
+        ctx.fillStyle = isWin ? '#ffd93d' : 'rgba(255,255,255,0.2)';
+
+        ctx.beginPath(); ctx.arc(p.x, p.y+14, 8, 0, Math.PI*2); ctx.fill();
+
+        ctx.fillStyle = isWin ? '#1a0a00' : 'rgba(255,255,255,0.5)';
+
+        ctx.font = 'bold 9px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+        ctx.fillText(isWin ? '当' : 'ー', p.x, p.y+14);
+
+      }
+
+    }
+
+
+
+
+    if (!allDone) {
+
+      animFrame = requestAnimationFrame(animate);
+
+    } else {
+
+      clearInterval(msgInterval);
+
+      document.getElementById('reveal-label').textContent = '結果が出ました！';
+
+      suspenseEl.textContent = '🎉 おめでとうございます！';
+
+      document.getElementById('progress-bar').style.width = '100%';
+
+      setTimeout(() => showResults(), 500);
+
+    }
+
+  }
+
+
+
+
+  animFrame = requestAnimationFrame(animate);
+
+};
+
+
+
+
+function showResults() {
+
+  const winners = [], losers = [];
+
+  for (let c = 0; c < TOTAL; c++) {
+
+    const endCol = traceAmida(c);
+
+    const name = amidaData.names[c] || `${c+1}番`;
+
+    (amidaData.outcomes[endCol] ? winners : losers).push(name);
+
+  }
+
+
+
+
+  const ww = document.getElementById('winners-wrap');
+
+  ww.innerHTML = '';
+
+  winners.forEach((name, i) => {
+
+    const chip = document.createElement('div');
+
+    chip.className = 'winner-chip';
+
+    chip.style.animationDelay = (i * 0.15) + 's';
+
+    chip.textContent = name + ' さん';
+
+    ww.appendChild(chip);
+
+  });
+
+
+
+
+  const lw = document.getElementById('losers-wrap');
+
+  lw.innerHTML = '';
+
+  losers.forEach((name, i) => {
+
+    const chip = document.createElement('div');
+
+    chip.className = 'loser-chip';
+
+    chip.style.animationDelay = (winners.length * 0.15 + i * 0.12) + 's';
+
+    chip.textContent = name + ' さん';
+
+    lw.appendChild(chip);
+
+  });
+
+
+
+
+  document.getElementById('result-section').style.display = 'block';
+
+  launchConfetti();
+
+}
+
+
+
+
+function launchConfetti() {
+
+  const container = document.getElementById('confetti');
+
+  container.innerHTML = '';
+
+  const fallStyle = document.createElement('style');
+
+  fallStyle.textContent = `@keyframes fall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}`;
+
+  document.head.appendChild(fallStyle);
+
+  const colors = ['#ffd93d','#ff6b6b','#6bcb77','#a78bfa','#4dd0e1'];
+
+  for (let i = 0; i < 80; i++) {
+
+    const p = document.createElement('div');
+
+    const size = 6 + Math.random() * 8;
+
+    p.style.cssText = `position:absolute;width:${size}px;height:${size}px;border-radius:${Math.random()>0.5?'50%':'2px'};background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-10px;animation:fall ${1.5+Math.random()*2.5}s linear ${Math.random()*1}s both;`;
+
+    container.appendChild(p);
+
+  }
+
+  setTimeout(() => container.innerHTML = '', 5000);
+
+}
+
+
+
+
+function createStars() {
+
+  const c = document.getElementById('stars');
+
+  for (let i = 0; i < 60; i++) {
+
+    const s = document.createElement('div');
+
+    const size = Math.random() * 2.5 + 1;
+
+    s.className = 'star';
+
+    s.style.cssText = `width:${size}px;height:${size}px;left:${Math.random()*100}%;top:${Math.random()*100}%;--d:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s;`;
+
+    c.appendChild(s);
+
+  }
+
+}
+
+
+
+
+createStars();
+
+showLoading();
+
+setTimeout(hideLoading, 1200);
+
 </script>
+
 </body>
+
 </html>
