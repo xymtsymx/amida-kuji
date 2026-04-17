@@ -456,26 +456,28 @@
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 
-import { getDatabase, ref, onValue } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+import { getDatabase, ref, onValue, set, get } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
 
 
 
-
-// ========== Firebase設定 (index.htmlと同じものを入れてください) ==========
 
 const firebaseConfig = {
 
   apiKey: "AIzaSyAMPfNdKuNlAgbxx84MOgF_yciqNVvwVjo",
+
   authDomain: "amida-kuji.firebaseapp.com",
+
   databaseURL: "https://amida-kuji-default-rtdb.asia-southeast1.firebasedatabase.app",
+
   projectId: "amida-kuji",
+
   storageBucket: "amida-kuji.firebasestorage.app",
+
   messagingSenderId: "446747601744",
+
   appId: "1:446747601744:web:c0e74da8080bf567a8da55"
 
 };
-
-// ===========================================================
 
 
 
@@ -489,6 +491,8 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const entriesRef = ref(db, 'entries');
+
+const resultRef = ref(db, 'amida_result');
 
 
 
@@ -805,8 +809,6 @@ function drawFrame(ctx, W, H, activePaths) {
 
 
 
-  const pathColors = ['#ffd93d','#ff6b6b','#6bcb77','#a78bfa','#4dd0e1','#ff9f43','#fd79a8','#00cec9','#e17055'];
-
   for (const ap of activePaths) {
 
     if (ap.points.length < 2) continue;
@@ -834,11 +836,25 @@ function drawFrame(ctx, W, H, activePaths) {
 
 
 
-window.startReveal = function() {
+window.startReveal = async function() {
 
   document.getElementById('phase-waiting').style.display = 'none';
 
   document.getElementById('phase-reveal').style.display = 'block';
+
+
+
+
+  showLoading();
+
+
+
+
+  // Firebaseに保存済みの結果があるか確認
+
+  const savedSnap = await get(resultRef);
+
+  const savedResult = savedSnap.val();
 
 
 
@@ -849,7 +865,51 @@ window.startReveal = function() {
 
   });
 
-  amidaData = generateAmida(namesBySlot);
+
+
+
+  if (savedResult) {
+
+    // 保存済みの結果を復元
+
+    amidaData = {
+
+      cols: savedResult.cols,
+
+      rows: savedResult.rows,
+
+      bridges: savedResult.bridges,
+
+      outcomes: savedResult.outcomes,
+
+      names: namesBySlot
+
+    };
+
+  } else {
+
+    // 初回：新たに生成してFirebaseに保存
+
+    amidaData = generateAmida(namesBySlot);
+
+    await set(resultRef, {
+
+      cols: amidaData.cols,
+
+      rows: amidaData.rows,
+
+      bridges: amidaData.bridges,
+
+      outcomes: amidaData.outcomes
+
+    });
+
+  }
+
+
+
+
+  hideLoading();
 
 
 
